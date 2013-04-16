@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+  <ModulePrefs title="shared ol3 map">
+     <Require feature="rpc"/>
+     <Require feature="views"/>
+  </ModulePrefs>
+  <Content type="html"><![CDATA[
+  <!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <link rel="stylesheet" href="https://rawgithub.com/openlayers/ol3/gh-pages/master/build/ol.css" type="text/css">
+      <style>
+        html, body, .map {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          height: 100%;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="map" class="map"></div>
+      <script src="//talkgadget.google.com/hangouts/_/api/hangout.js?v=1.4" ></script>
+      <script src="https://rawgithub.com/openlayers/ol3/gh-pages/master/build/ol.js" ></script>
+      <script>
+        function init() {
+          var view = new ol.View2D({
+            center: [0, 0],
+            zoom: 2
+          });
+          var map = new ol.Map({
+            layers: [
+              new ol.layer.TileLayer({
+                source: new ol.source.OSM()
+              })
+            ],
+            target: 'map',
+            view: view
+          });
+          var me = gapi.hangout.getLocalParticipantId();
+          view.on('changed', function() {
+            gapi.hangout.data.submitDelta({
+              view: JSON.stringify({
+                center: view.getCenter(),
+                resolution: view.getResolution(),
+                rotation: view.getRotation(),
+              }),
+              sender: me
+            });
+          });
+          gapi.hangout.data.onStateChanged.add(function(event) {
+            var sender = gapi.hangout.data.getValue('sender');
+            if (sender !== me) {
+              var state = JSON.parse(gapi.hangout.data.getValue('view'));
+              for (var key in state) {
+                view.set(key, state[key]);
+              }
+            }
+          });
+        };
+        gadgets.util.registerOnLoadHandler(init);
+      </script>
+    </body>
+  </html>
+  ]]>
+  </Content>
+</Module>
