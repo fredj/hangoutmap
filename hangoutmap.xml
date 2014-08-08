@@ -30,7 +30,7 @@
       <script src="//talkgadget.google.com/hangouts/_/api/hangout.js?v=1.4" ></script>
       <script src="//rawgit.com/fredj/hangoutmap/master/lib/ol/ol.js" ></script>
       <script>
-      // Copyright (c) 2013 by frederic.junod@gmail.com
+      // Copyright (c) 2013-2014 by frederic.junod@gmail.com
       // Licensed under the http://www.wtfpl.net/ license
       //
       // Suggested playlist:
@@ -49,33 +49,26 @@
         };
 
         function main() {
-          view = new ol.View2D({
-            center: [0, 0],
-            zoom: 2
-          });
           map = new ol.Map({
             layers: [
-              new ol.layer.TileLayer({
-                source: new ol.source.Stamen({
-                  layer: 'watercolor'
-                })
-              }),
-              new ol.layer.TileLayer({
-                source: new ol.source.Stamen({
-                  layer: 'terrain-labels'
-                })
+              new ol.layer.Tile({
+                source: new ol.source.OSM()
               })
             ],
             target: 'map',
-            view: view
+            view: new ol.View({
+              center: [0, 0],
+              zoom: 2
+            })
           });
 
           markers = {};
 
-          geolocation = new ol.Geolocation();
-          geolocation.bindTo('projection', view);
+          geolocation = new ol.Geolocation({
+            projection: map.getView().getProjection()
+          });
 
-          geolocation.on('changed', function() {
+          geolocation.on('change', function() {
             gapi.hangout.data.setValue(gapi.hangout.getLocalParticipantId(),
               JSON.stringify({
                 position: geolocation.getPosition(),
@@ -91,17 +84,19 @@
               if (participant) {
                 var location = JSON.parse(gapi.hangout.data.getValue(participant.id));
                 if (location.position) {
-                  if (markers[participant.id] === undefined) {
+                  var marker = markers[participant.id];
+                  if (marker === undefined) {
                     var img = document.createElement('img');
                     img.className = 'marker';
                     img.src = participant.person.image.url;
                     img.title = participant.person.displayName;
-                    markers[participant.id] = new ol.Overlay({
-                      map: map,
+                    marker = new ol.Overlay({
                       element: img
                     });
+                    map.addOverlay(marker);
+                    markers[participant.id] = marker;
                   }
-                  markers[participant.id].setPosition(location.position)
+                  marker.setPosition(location.position)
                 }
               }
             }
